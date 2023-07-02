@@ -6,9 +6,9 @@ The notebook JobAppLog.ipynb compliments the main JAL.py dashboard - it is used 
 
 To start the dashboard, open your terminal, navigate to a good folder and execute these commands:
 
-git clone https://github.com/CulleyHarrelson/JAL.git
-cd JAL
-python3 -m venv .venv
-source .venv/bin/activate
-pip3 install -r requirements.txt
-panel serve --show --autoreload JAL.py
+    git clone https://github.com/CulleyHarrelson/JAL.git
+    cd JAL
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip3 install -r requirements.txt
+    panel serve --show --autoreload JAL.py
