@@ -5,6 +5,8 @@ import json
 import re
 import requests
 import datetime as dt
+from bokeh.models.widgets.tables import DateFormatter
+import altair as alt
 
 pn.extension()
 pn.extension("tabulator")
@@ -38,7 +40,14 @@ def get_directories():
 
 df_filename = "JAL.json"
 directories = get_directories()
-
+company_sizes = [
+    "51-200 employees",
+    "201-500 employees",
+    "501-1,000 employees",
+    "1,001-5,000 employees",
+    "5,001-10,000 employees",
+    "10,000+ employees",
+]
 job_types = [
     "Full-time",
     "Contract",
@@ -50,21 +59,23 @@ job_types = [
 ]
 
 
+df_columns = [
+    "job_code",
+    "job_title",
+    "company_name",
+    "location",
+    "starting_salary_range",
+    "ending_salary_range",
+    "experience_level",
+    "job_type",
+    "company_size",
+    "industry",
+    "application_date",
+    "applicants",
+]
+
+
 def compile_dataframe():
-    df_columns = [
-        "job_code",
-        "job_title",
-        "company_name",
-        "location",
-        "starting_salary_range",
-        "ending_salary_range",
-        "experience_level",
-        "job_type",
-        "company_size",
-        "industry",
-        "application_date",
-        "applicants",
-    ]
     df = pd.DataFrame(columns=df_columns)
     for file in os.listdir(directories["json"]):
         if file.endswith(".json"):
@@ -73,7 +84,6 @@ def compile_dataframe():
                     os.path.join(directories["json"], file), orient="index"
                 )
                 df = pd.concat([df, new_data])
-    df.set_index("job_code", inplace=True, drop=False)
     df.to_json(df_filename, orient="index", indent=6)
     return initialize_dataframe()
 
@@ -82,14 +92,14 @@ def initialize_dataframe():
     if os.path.exists(df_filename):
         df = pd.read_json(df_filename, orient="index")
     else:
-        df = pd.DataFrame()
+        df = pd.DataFrame(columns=df_columns)
     # df.set_index("job_code", inplace=True, drop=False)
     df["application_date"] = pd.to_datetime(df["application_date"])
     df["job_type"] = df["job_type"].astype("category")
     df["company_size"] = df["company_size"].astype("category")
     df["industry"] = df["industry"].astype("category")
     df["job_code"] = df["job_code"].astype("str")
-    return df  # , df[["job_code", "job_title", "company_name", "application_date"]]
+    return df
 
 
 jal_df = initialize_dataframe()
@@ -135,8 +145,11 @@ def parse_job_details(job_details):
     line2_data = lines[1].split("·")
     job_data["company_name"] = line2_data[0].strip()
 
-    search_results = re.search(r"(.*, [A-Z]{2}) .*", line2_data[1])
-    job_data["location"] = search_results.group(1).strip()
+    if "Remote" in line2_data[1]:
+        job_data["location"] = "Remote"
+    else:
+        search_results = re.search(r"(.*, [A-Z]{2}) .*", line2_data[1])
+        job_data["location"] = search_results.group(1).strip()
 
     search_results = re.search(r"(\d+) applicants.*", line2_data[2])
     job_data["applicants"] = search_results.group(1).strip()
@@ -148,6 +161,11 @@ def parse_job_details(job_details):
         job_data["job_type"] = line3_data[1].strip()
         job_data["experience_level"] = line3_data[2].strip()
         job_data.update(parse_salary_range(line3_data[0].strip()))
+    elif len(line3_data) == 1:
+        if line3_data[0].strip() in job_types:
+            job_data["job_type"] = line3_data[0].strip()
+        else:
+            job_data["experience_level"] = line3_data[0].strip()
     else:
         if line3_data[0].strip() in job_types:
             job_data["job_type"] = line3_data[0].strip()
@@ -242,20 +260,81 @@ add_job_header = pn.pane.Markdown(
     """
 )
 
-m = pn.pane.Markdown("")
+
 job_code = pn.widgets.TextInput()
 job_details = pn.widgets.TextAreaInput()
 button = pn.widgets.Button(name="Save", button_type="primary")
 application_date = pn.widgets.DatePicker(value=dt.date.today())
 date_range_slider = pn.widgets.DateRangeSlider(
     name="Reporting Range",
-    start=dt.datetime(2017, 1, 1),
-    end=dt.datetime(2019, 1, 1),
-    value=(dt.datetime(2017, 1, 1), dt.datetime(2018, 1, 10)),
+    # start=dt.datetime(2017, 1, 1),
+    start=jal_df["application_date"].min().to_pydatetime(),
+    end=jal_df["application_date"].max().to_pydatetime(),
+    value=(
+        jal_df["application_date"].min().to_pydatetime(),
+        jal_df["application_date"].max().to_pydatetime(),
+    ),
     step=24 * 3600 * 2 * 1000,
 )
 # ,
+
+
 jobs_data_table = pn.widgets.Tabulator(jal_df)
+jobs_data_table.show_index = False
+jobs_data_table.sorters = [{"field": "application_date", "dir": "desc"}]
+jobs_data_table.formatters = {"application_date": DateFormatter()}
+jobs_data_table.titles = {
+    "job_title": "Job Title",
+    "job_code": "Job Code",
+    "company_name": "Company Name",
+    "location": "Location",
+    "application_date": "Application Date",
+}
+jobs_data_table.hidden_columns = [
+    "starting_salary_range",
+    "ending_salary_range",
+    "experience_level",
+    "job_type",
+    "company_size",
+    "industry",
+    "applicants",
+]
+
+
+company_size_summary = jal_df.groupby("company_size")["job_code"].count()
+company_size_summary = pd.DataFrame(company_size_summary).reset_index()
+company_size_summary.rename(columns={"job_code": "Count"}, inplace=True)
+
+company_size_donut_chart = (
+    alt.Chart(company_size_summary)
+    .mark_arc(innerRadius=65)
+    .encode(
+        theta="Count",
+        color=alt.Color("company_size:N", sort=company_sizes).legend(
+            title="Company Size",
+            orient="right",
+        ),
+        size="Count",
+    )
+    # .properties(width=100)
+)
+
+
+pd.options.mode.chained_assignment = None
+starting = jal_df[["location", "starting_salary_range"]]
+starting.rename(columns={"starting_salary_range": "salary"}, inplace=True)
+ending = jal_df[["location", "ending_salary_range"]]
+ending.rename(columns={"ending_salary_range": "salary"}, inplace=True)
+location_box_plot_df = pd.concat([starting, ending])
+location_salary_box_plot = (
+    alt.Chart(location_box_plot_df)
+    .mark_boxplot(extent="min-max")
+    .encode(
+        x=alt.X("location:O", title="Location", axis=alt.Axis(labelAngle=-45)),
+        y=alt.Y("salary:Q", title="Salary"),
+    )
+    .properties(width=400)
+)
 
 
 def save_record(event):
@@ -292,7 +371,8 @@ def save_record(event):
         )
     job_code.value = ""
     job_details.value = ""
-    jal_df = compile_dataframe()
+    # the dataframe is not being rebuilt for some reason...
+    compile_dataframe()
 
 
 button.on_click(save_record)
@@ -300,30 +380,39 @@ button.on_click(save_record)
 bootstrap.sidebar.append(sidebar_md)
 bootstrap.sidebar.append(date_range_slider)
 application_count = pn.indicators.Number(
-    name="Application Count", value=12, default_color="darkred"
+    name="Application Count",
+    value=jal_df["job_code"].nunique(),
+    default_color="darkred",
 )
 location_count = pn.indicators.Number(
-    name="Location Count", value=5, default_color="green"
+    name="Location Count",
+    value=jal_df["location"].nunique(),
+    default_color="green",
 )
 industry_count = pn.indicators.Number(
-    name="Industry Count", value=2, default_color="orange"
+    name="Industry Count", value=jal_df["industry"].nunique(), default_color="orange"
 )
 bootstrap.sidebar.append(application_count)
 bootstrap.sidebar.append(location_count)
 bootstrap.sidebar.append(industry_count)
+# bootstrap.sidebar.append(company_size_donut_chart)
 
-bootstrap.main.append(pn.Spacer(height=20))
-bootstrap.main.append(
-    pn.Column(
-        pn.Row(add_job_header),
-        pn.Row(
-            pn.Column("Application Date", "LinkedIn Job Code", "LinkedIn Job Details"),
-            pn.Column(application_date, job_code, job_details, button),
-            pn.Column(useage_md),
-        ),
-        pn.Row(jobs_data_table),
-    )
+data_entry = pn.Column(
+    pn.Row(pn.Spacer(height=20)),
+    pn.Row(add_job_header),
+    pn.Row(
+        pn.Column("Application Date", "LinkedIn Job Code", "LinkedIn Job Details"),
+        pn.Column(application_date, job_code, job_details, button),
+        pn.Column(useage_md),
+    ),
+    pn.Row(jobs_data_table),
 )
-bootstrap.main.append(m)
+analysis = pn.Column(
+    pn.Row(pn.Spacer(height=20)),
+    pn.Row(company_size_donut_chart, location_salary_box_plot),
+)
+tabs = pn.Tabs(("Data", data_entry), ("Analysis", analysis))
+
+bootstrap.main.append(tabs)
 
 bootstrap.servable()
