@@ -11,4 +11,4 @@ To start the dashboard, open your terminal, navigate to a good folder and execut
     python3 -m venv .venv
     source .venv/bin/activate
     pip3 install -r requirements.txt
-    panel serve --show --autoreload JAL.py
+    panel serve --show --autoreload *.py
