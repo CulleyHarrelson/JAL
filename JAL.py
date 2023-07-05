@@ -112,6 +112,7 @@ def initialize_dataframe():
 
 jal_df = initialize_dataframe()
 
+
 def materialize_job_details(linkedin_job_code, job_details):
     directories = directories()
     raw_filename = f"{linkedin_job_code}.txt"
@@ -121,6 +122,7 @@ def materialize_job_details(linkedin_job_code, job_details):
             f.write(job_details)
             f.close()
     return job_details
+
 
 def parse_salary_range(salary_range):
     return_value = {}
@@ -226,3 +228,14 @@ def materialize_json(linkedin_job_code, job_details, application_date):
         json_file.close()
     return job
 
+
+def jal_template(sidebar_md):
+    bootstrap = pn.template.BootstrapTemplate(
+        title="JAL ~ Job Application Log",
+        header_background="lightblue",
+    )
+
+    bootstrap.sidebar.append(sidebar_md)
+
+    # bootstrap.servable()
+    return bootstrap

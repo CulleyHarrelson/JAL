@@ -1,21 +1,16 @@
 import pandas as pd
-import os
 import panel as pn
-import json
-import re
-import requests
 import datetime as dt
 from bokeh.models.widgets.tables import DateFormatter
 import altair as alt
 
-from JAL import *
+from JAL import company_sizes, initialize_dataframe, jal_template
+
 
 jal_df = initialize_dataframe()
 
 
 pn.extension()
-pn.extension("tabulator")
-pn.config.notifications = True
 
 
 bootstrap = pn.template.BootstrapTemplate(
@@ -29,6 +24,7 @@ sidebar_md = pn.pane.Markdown(
 * **Analytics**
 """
 )
+bootstrap = jal_template(sidebar_md=sidebar_md)
 
 useage_md = pn.pane.Markdown(
     """
@@ -161,7 +157,6 @@ if delta == 0:
 daily_application_average = jal_df["job_code"].count() / delta
 
 
-bootstrap.sidebar.append(sidebar_md)
 # bootstrap.sidebar.append(date_range_slider)
 # bootstrap.sidebar.append(refresh_button)
 

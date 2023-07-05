@@ -1,27 +1,16 @@
 import pandas as pd
-import os
 import panel as pn
 import json
-import re
-import requests
 import datetime as dt
-from bokeh.models.widgets.tables import DateFormatter
-import altair as alt
 
-from JAL import *
+from JAL import initialize_dataframe, jal_template
 
 pn.extension()
-pn.extension("tabulator")
 pn.config.notifications = True
-
-# pn.state.notifications.position = "bottom-center"
 
 jal_df = initialize_dataframe()
 
-bootstrap = pn.template.BootstrapTemplate(
-    title="JAL ~ Job Application Log",
-    header_background="lightblue",
-)
+bootstrap = jal_template()
 
 sidebar_md = pn.pane.Markdown(
     """* **New Application**
@@ -29,6 +18,8 @@ sidebar_md = pn.pane.Markdown(
 * [**Analytics**](analytics)
 """
 )
+bootstrap.sidebar.append(sidebar_md)
+
 
 useage_md = pn.pane.Markdown(
     """
@@ -115,14 +106,13 @@ def save_record(event):
         )
     job_code.value = ""
     job_details.value = ""
-    # the dataframe is not being rebuilt for some reason...
     compile_dataframe()
     bootstrap.param.trigger("object")
+
 
 add_button.on_click(save_record)
 
 bootstrap.sidebar.append(sidebar_md)
-# bootstrap.sidebar.append(company_size_donut_chart)
 
 data_entry = pn.Column(
     pn.Row(pn.Spacer(height=20)),

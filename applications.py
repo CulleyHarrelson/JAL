@@ -1,27 +1,10 @@
-import pandas as pd
-import os
 import panel as pn
-import json
-import re
-import requests
-import datetime as dt
 from bokeh.models.widgets.tables import DateFormatter
-import altair as alt
+from JAL import initialize_dataframe, jal_template
 
-from JAL import *
-
-pn.extension()
 pn.extension("tabulator")
-pn.config.notifications = True
-
-# pn.state.notifications.position = "bottom-center"
-
 jal_df = initialize_dataframe()
-
-bootstrap = pn.template.BootstrapTemplate(
-    title="JAL ~ Job Application Log",
-    header_background="lightblue",
-)
+bootstrap = jal_template()
 
 sidebar_md = pn.pane.Markdown(
     """* [**New Application**](new)
@@ -30,9 +13,11 @@ sidebar_md = pn.pane.Markdown(
 """
 )
 
+bootstrap.sidebar.append(sidebar_md)
+
 applications_page_header = pn.pane.Markdown(
     """
-    # Job Application Datatable
+    # Job Applications
     """
 )
 
@@ -59,12 +44,7 @@ jobs_data_table.hidden_columns = [
     "applicants",
 ]
 
-bootstrap = pn.template.BootstrapTemplate(
-    title="JAL ~ Job Application Log",
-    header_background="lightblue",
-)
-
-bootstrap.sidebar.append(sidebar_md)
+bootstrap = jal_template(sidebar_md=sidebar_md)
 
 bootstrap.main.append(applications_page_header)
 bootstrap.main.append(jobs_data_table)
