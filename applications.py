@@ -44,9 +44,16 @@ jobs_data_table.hidden_columns = [
     "applicants",
 ]
 
-bootstrap = jal_template(sidebar_md=sidebar_md)
-
 bootstrap.main.append(applications_page_header)
 bootstrap.main.append(jobs_data_table)
+
+pn.extension("ace", "jsoneditor")
+
+# read a single json file from jobs/json and feed it into the below json_editor
+# json_editor = pn.widgets.JSONEditor(
+#     value=jal_df.to_json(orient="records"),
+#     width=400,
+# )
+
 
 bootstrap.servable()

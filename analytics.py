@@ -12,11 +12,7 @@ jal_df = initialize_dataframe()
 
 pn.extension()
 
-
-bootstrap = pn.template.BootstrapTemplate(
-    title="JAL ~ Job Application Log",
-    header_background="lightblue",
-)
+bootstrap = jal_template()
 
 sidebar_md = pn.pane.Markdown(
     """* [**New Application**](new)
@@ -24,7 +20,7 @@ sidebar_md = pn.pane.Markdown(
 * **Analytics**
 """
 )
-bootstrap = jal_template(sidebar_md=sidebar_md)
+bootstrap.sidebar.append(sidebar_md)
 
 useage_md = pn.pane.Markdown(
     """
@@ -156,9 +152,6 @@ if delta == 0:
     delta = 1
 daily_application_average = jal_df["job_code"].count() / delta
 
-
-# bootstrap.sidebar.append(date_range_slider)
-# bootstrap.sidebar.append(refresh_button)
 
 daily_average = pn.indicators.Number(
     name="Daily Average",

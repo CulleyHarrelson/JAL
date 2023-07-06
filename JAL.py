@@ -229,13 +229,10 @@ def materialize_json(linkedin_job_code, job_details, application_date):
     return job
 
 
-def jal_template(sidebar_md):
+def jal_template():
     bootstrap = pn.template.BootstrapTemplate(
         title="JAL ~ Job Application Log",
         header_background="lightblue",
     )
 
-    bootstrap.sidebar.append(sidebar_md)
-
-    # bootstrap.servable()
     return bootstrap
