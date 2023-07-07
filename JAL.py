@@ -8,12 +8,6 @@ import datetime as dt
 from bokeh.models.widgets.tables import DateFormatter
 import altair as alt
 
-pn.extension()
-pn.extension("tabulator")
-pn.config.notifications = True
-
-# pn.state.notifications.position = "bottom-center"
-
 jobs_directory = "jobs"
 df_filename = "JAL.json"
 
@@ -82,8 +76,11 @@ def columns():
     return df_columns
 
 
+directories = directories()
+job_types = job_types()
+
+
 def compile_dataframe():
-    directories = directories()
     df = pd.DataFrame(columns=columns())
     for file in os.listdir(directories["json"]):
         if file.endswith(".json"):
@@ -103,18 +100,14 @@ def initialize_dataframe():
         df = pd.DataFrame(columns=columns())
     # df.set_index("job_code", inplace=True, drop=False)
     df["application_date"] = pd.to_datetime(df["application_date"])
-    df["job_type"] = df["job_type"].astype("category")
-    df["company_size"] = df["company_size"].astype("category")
-    df["industry"] = df["industry"].astype("category")
+    # df["job_type"] = df["job_type"].astype("category")
+    # df["company_size"] = df["company_size"].astype("category")
+    # df["industry"] = df["industry"].astype("category")
     df["job_code"] = df["job_code"].astype("str")
     return df
 
 
-jal_df = initialize_dataframe()
-
-
 def materialize_job_details(linkedin_job_code, job_details):
-    directories = directories()
     raw_filename = f"{linkedin_job_code}.txt"
 
     if not os.path.exists(os.path.join(directories["raw"], raw_filename)):
@@ -144,7 +137,6 @@ def parse_salary_range(salary_range):
 
 def parse_job_details(job_details):
     lines = job_details.splitlines()
-    job_types = job_types()
     job_data = {}
 
     # Line 1
@@ -158,7 +150,10 @@ def parse_job_details(job_details):
         job_data["location"] = "Remote"
     else:
         search_results = re.search(r"(.*, [A-Z]{2}) .*", line2_data[1])
-        job_data["location"] = search_results.group(1).strip()
+        if search_results:
+            job_data["location"] = search_results.group(1).strip()
+        else:
+            job_data["location"] = "Remote"
 
     search_results = re.search(r"(\d+) applicants.*", line2_data[2])
     job_data["applicants"] = search_results.group(1).strip()
@@ -195,7 +190,6 @@ def parse_job_details(job_details):
 
 
 def materialize_html(linkedin_job_code):
-    directories = directories()
     html_filename = f"{linkedin_job_code}.html"
     url = f"https://www.linkedin.com/jobs/view/{linkedin_job_code}"
 
@@ -211,7 +205,6 @@ def materialize_html(linkedin_job_code):
 
 
 def materialize_json(linkedin_job_code, job_details, application_date):
-    directories = directories()
     json_filename = f"{linkedin_job_code}.json"
 
     if os.path.exists(os.path.join(directories["json"], json_filename)):
@@ -224,7 +217,7 @@ def materialize_json(linkedin_job_code, job_details, application_date):
 
     with open(os.path.join(directories["json"], json_filename), "w") as f:
         json_file = open(os.path.join(directories["json"], json_filename), "w")
-        json.dump(job, json_file, indent=4)
+        json.dump(job, json_file)
         json_file.close()
     return job
 

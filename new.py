@@ -3,7 +3,7 @@ import panel as pn
 import json
 import datetime as dt
 
-from JAL import initialize_dataframe, jal_template
+from JAL import *
 
 pn.extension()
 pn.config.notifications = True

@@ -107,7 +107,7 @@ company_size_donut_chart = (
         ),
         size="Count",
     )
-    # .properties(width=100)
+    .properties(width=400)
 )
 
 ca_step_one = jal_df.groupby(["application_date"]).count()
@@ -129,6 +129,27 @@ cumulative_application_chart = (
 )
 
 
+ca_step_one = jal_df.groupby(["application_date"]).sum()
+ca_step_two = ca_step_one.cumsum()
+
+ca_step_two.reset_index(inplace=True)
+ca_step_two.rename(columns={"index": "application_date"}, inplace=True)
+ca_step_two["application_date"] = pd.to_datetime(ca_step_two["application_date"])
+
+
+other_application_chart = (
+    alt.Chart(ca_step_two.reset_index())
+    # .mark_line(interpolate="step-after")
+    .mark_line(interpolate="monotone")
+    .encode(
+        x=alt.X("application_date:T", axis=alt.Axis(labelAngle=-45), title="Date"),
+        y=alt.Y("applicants:Q", title="Cumulative Applicants"),
+        tooltip=["application_date"],
+    )
+    .properties(width=800, height=400)
+)
+
+
 pd.options.mode.chained_assignment = None
 starting = jal_df[["location", "starting_salary_range"]]
 starting.rename(columns={"starting_salary_range": "salary"}, inplace=True)
@@ -142,7 +163,7 @@ location_salary_box_plot = (
         x=alt.X("location:O", title="Location", axis=alt.Axis(labelAngle=-45)),
         y=alt.Y("salary:Q", title="Salary"),
     )
-    .properties(width=400)
+    .properties(width=600)
 )
 # q: what is the key combination for switching between tabs?
 
@@ -152,6 +173,17 @@ if delta == 0:
     delta = 1
 daily_application_average = jal_df["job_code"].count() / delta
 
+total_applicants = pn.indicators.Number(
+    name="Total Applicants",
+    value=jal_df["applicants"].sum(),
+    default_color="darkblue",
+)
+
+average_applicants = pn.indicators.Number(
+    name="Average Applicants",
+    value=round(jal_df["applicants"].sum() / jal_df["job_code"].nunique()),
+    default_color="darkcyan",
+)
 
 daily_average = pn.indicators.Number(
     name="Daily Average",
@@ -171,15 +203,20 @@ location_count = pn.indicators.Number(
 industry_count = pn.indicators.Number(
     name="Industry Count", value=jal_df["industry"].nunique(), default_color="orange"
 )
-bootstrap.sidebar.append(daily_average)
+
 bootstrap.sidebar.append(application_count)
+bootstrap.sidebar.append(daily_average)
+bootstrap.sidebar.append(average_applicants)
+bootstrap.sidebar.append(total_applicants)
 bootstrap.sidebar.append(location_count)
 bootstrap.sidebar.append(industry_count)
 
 analysis = pn.Column(
     pn.Row(pn.Spacer(height=20)),
     pn.Row(cumulative_application_chart),
-    pn.Row(company_size_donut_chart, location_salary_box_plot),
+    pn.Row(other_application_chart),
+    pn.Row(location_salary_box_plot),
+    pn.Row(company_size_donut_chart),
 )
 
 bootstrap.main.append(analysis)

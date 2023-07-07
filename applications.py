@@ -1,4 +1,5 @@
 import panel as pn
+import json
 from bokeh.models.widgets.tables import DateFormatter
 from JAL import initialize_dataframe, jal_template
 
@@ -41,7 +42,7 @@ jobs_data_table.hidden_columns = [
     "job_type",
     "company_size",
     "industry",
-    "applicants",
+    "hourly_rate",
 ]
 
 bootstrap.main.append(applications_page_header)
@@ -54,6 +55,17 @@ pn.extension("ace", "jsoneditor")
 #     value=jal_df.to_json(orient="records"),
 #     width=400,
 # )
+#
+
+
+json_file = open("jobs/json/3650056154.json", "r")
+json_file_contents = json.load(json_file)
+json_file.close()
+
+json_editor = pn.widgets.JSONEditor(value=json_file_contents, width=400, height=600)
+
+
+bootstrap.main.append(json_editor)
 
 
 bootstrap.servable()
