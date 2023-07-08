@@ -55,21 +55,6 @@ add_job_header = pn.pane.Markdown(
 )
 
 
-refresh_button = pn.widgets.Button(name="Refresh Data")  # , button_type="primary")
-date_range_slider = pn.widgets.DateRangeSlider(
-    name="Reporting Range",
-    # start=dt.datetime(2017, 1, 1),
-    start=jal_df["application_date"].min().to_pydatetime(),
-    end=jal_df["application_date"].max().to_pydatetime(),
-    value=(
-        jal_df["application_date"].min().to_pydatetime(),
-        jal_df["application_date"].max().to_pydatetime(),
-    ),
-    step=24 * 3600 * 2 * 1000,
-)
-# ,
-
-
 jobs_data_table = pn.widgets.Tabulator(jal_df)
 jobs_data_table.show_index = False
 jobs_data_table.sorters = [{"field": "application_date", "dir": "desc"}]
@@ -128,14 +113,8 @@ cumulative_application_chart = (
     .properties(width=800, height=400)
 )
 
-
-ca_step_one = jal_df.groupby(["application_date"]).sum()
-ca_step_two = ca_step_one.cumsum()
-
-ca_step_two.reset_index(inplace=True)
-ca_step_two.rename(columns={"index": "application_date"}, inplace=True)
-ca_step_two["application_date"] = pd.to_datetime(ca_step_two["application_date"])
-
+ca_step_one = jal_df.groupby(["application_date"])["applicants"].sum()
+ca_step_two = pd.DataFrame(ca_step_one.cumsum())
 
 other_application_chart = (
     alt.Chart(ca_step_two.reset_index())
@@ -156,6 +135,11 @@ starting.rename(columns={"starting_salary_range": "salary"}, inplace=True)
 ending = jal_df[["location", "ending_salary_range"]]
 ending.rename(columns={"ending_salary_range": "salary"}, inplace=True)
 location_box_plot_df = pd.concat([starting, ending])
+# concat in hourly_rate, converting it to annual salary, assuming 40 hours per week, 48 weeks per year
+# hourly = location_box_plot_df["hourly_rate"] * 40 * 48
+# ending = jal_df[["location", "hour"]]
+# location_box_plot_df = pd.concat([location_box_plot_df, hourly])
+
 location_salary_box_plot = (
     alt.Chart(location_box_plot_df)
     .mark_boxplot(extent="min-max")

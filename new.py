@@ -56,20 +56,7 @@ add_job_header = pn.pane.Markdown(
 job_code = pn.widgets.TextInput()
 job_details = pn.widgets.TextAreaInput()
 add_button = pn.widgets.Button(name="Save", button_type="primary")
-refresh_button = pn.widgets.Button(name="Refresh Data")  # , button_type="primary")
 application_date = pn.widgets.DatePicker(value=dt.date.today())
-date_range_slider = pn.widgets.DateRangeSlider(
-    name="Reporting Range",
-    # start=dt.datetime(2017, 1, 1),
-    start=jal_df["application_date"].min().to_pydatetime(),
-    end=jal_df["application_date"].max().to_pydatetime(),
-    value=(
-        jal_df["application_date"].min().to_pydatetime(),
-        jal_df["application_date"].max().to_pydatetime(),
-    ),
-    step=24 * 3600 * 2 * 1000,
-)
-# q: how do I open the github copilot tab in vscode?
 
 
 def save_record(event):
@@ -102,7 +89,7 @@ def save_record(event):
         )
     else:
         pn.state.notifications.error(
-            "Unable to extract data for JSON record.", duration=2000
+            "does this record already exist?  Save unsuccessful.", duration=2000
         )
     job_code.value = ""
     job_details.value = ""

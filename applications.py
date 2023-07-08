@@ -24,28 +24,50 @@ applications_page_header = pn.pane.Markdown(
 
 applications_page_header.width = 920
 
-jobs_data_table = pn.widgets.Tabulator(jal_df)
-jobs_data_table.show_index = False
-jobs_data_table.sorters = [{"field": "application_date", "dir": "desc"}]
-jobs_data_table.formatters = {"application_date": DateFormatter()}
-jobs_data_table.titles = {
-    "job_title": "Job Title",
-    "job_code": "Job Code",
-    "company_name": "Company Name",
-    "location": "Location",
-    "application_date": "Application Date",
-}
-jobs_data_table.hidden_columns = [
-    "starting_salary_range",
-    "ending_salary_range",
-    "experience_level",
-    "job_type",
-    "company_size",
-    "industry",
-    "hourly_rate",
-]
+status_button_group = pn.widgets.RadioButtonGroup(
+    name="Applcation Status",
+    value="Open",
+    options=["Open", "Closed"],
+)
+
+
+def load_data_table(status):
+    # pn.state.notifications.info(f"loading data for {status}", duration=2000)
+    jobs_data_table = pn.widgets.Tabulator(jal_df.loc[jal_df["status"] == status])
+    # jobs_data_table.buttons = {
+    #    "close": '<i class="fa fa-window-close"></i>',
+    # }
+    jobs_data_table.show_index = False
+    jobs_data_table.sorters = [{"field": "application_date", "dir": "desc"}]
+    jobs_data_table.formatters = {"application_date": DateFormatter()}
+    jobs_data_table.titles = {
+        "job_title": "Job Title",
+        "job_code": "Job Code",
+        "company_name": "Company Name",
+        "location": "Location",
+        "application_date": "Application Date",
+    }
+    jobs_data_table.hidden_columns = [
+        "starting_salary_range",
+        "ending_salary_range",
+        "experience_level",
+        "job_type",
+        "company_size",
+        "industry",
+        "hourly_rate",
+    ]
+    return jobs_data_table
+
+
+# jobs_data_table = load_data_table("Open")
+jobs_data_table = pn.bind(load_data_table, status_button_group)
+# json_editor = pn.bind(load_editor, search_company)
+
+# status_button_group.on_click(lambda event: print(event))
+
 
 bootstrap.main.append(applications_page_header)
+bootstrap.main.append(status_button_group)
 bootstrap.main.append(jobs_data_table)
 
 pn.extension("ace", "jsoneditor")
@@ -56,16 +78,6 @@ pn.extension("ace", "jsoneditor")
 #     width=400,
 # )
 #
-
-
-json_file = open("jobs/json/3650056154.json", "r")
-json_file_contents = json.load(json_file)
-json_file.close()
-
-json_editor = pn.widgets.JSONEditor(value=json_file_contents, width=400, height=600)
-
-
-bootstrap.main.append(json_editor)
 
 
 bootstrap.servable()

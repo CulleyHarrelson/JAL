@@ -97,7 +97,7 @@ def initialize_dataframe():
     if os.path.exists(df_filename):
         df = pd.read_json(df_filename, orient="index")
     else:
-        df = pd.DataFrame(columns=columns())
+        df = compile_dataframe()
     # df.set_index("job_code", inplace=True, drop=False)
     df["application_date"] = pd.to_datetime(df["application_date"])
     # df["job_type"] = df["job_type"].astype("category")
@@ -105,6 +105,30 @@ def initialize_dataframe():
     # df["industry"] = df["industry"].astype("category")
     df["job_code"] = df["job_code"].astype("str")
     return df
+
+
+def read_job_record(linkedin_job_code: str):
+    json_filename = f"{linkedin_job_code}.json"
+
+    if os.path.exists(os.path.join(directories["json"], json_filename)):
+        with open(os.path.join(directories["json"], json_filename), "r") as f:
+            job_data = json.load(f)
+            f.close()
+
+        return job_data
+
+
+def write_job_record(job_data: json):
+    json_filename = f"{job_data['job']['job_code']}.json"
+
+    with open(os.path.join(directories["json"], json_filename), "w") as f:
+        json_file = open(os.path.join(directories["json"], json_filename), "w")
+        json.dump(job_data, json_file, indent=6)
+        json_file.close()
+
+    if os.path.exists(df_filename):
+        os.remove(df_filename)
+    return job_data
 
 
 def materialize_job_details(linkedin_job_code, job_details):
@@ -207,18 +231,16 @@ def materialize_html(linkedin_job_code):
 def materialize_json(linkedin_job_code, job_details, application_date):
     json_filename = f"{linkedin_job_code}.json"
 
-    if os.path.exists(os.path.join(directories["json"], json_filename)):
-        with open(os.path.join(directories["json"], json_filename), "r") as f:
-            job_data = json.load(f)
-            return job_data
+    job = read_job_record(linkedin_job_code)
+    if job:
+        return None
+
     job = parse_job_details(job_details)
     job["job"]["application_date"] = application_date.strftime("%Y-%m-%d")
+    job["job"]["status"] = "Open"
     job["job"]["job_code"] = linkedin_job_code
+    job = write_job_record(job)
 
-    with open(os.path.join(directories["json"], json_filename), "w") as f:
-        json_file = open(os.path.join(directories["json"], json_filename), "w")
-        json.dump(job, json_file)
-        json_file.close()
     return job
 
 
