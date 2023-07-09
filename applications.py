@@ -46,6 +46,7 @@ def load_data_table(status):
         "company_name": "Company Name",
         "location": "Location",
         "application_date": "Application Date",
+        "applicants": "Applicants",
     }
     jobs_data_table.hidden_columns = [
         "starting_salary_range",
@@ -55,11 +56,16 @@ def load_data_table(status):
         "company_size",
         "industry",
         "hourly_rate",
+        "status",
     ]
+    if status == "Open":
+        jobs_data_table.hidden_columns.append("closure_date")
+    else:
+        jobs_data_table.titles["closure_date"] = "Closure Date"
+
     return jobs_data_table
 
 
-# jobs_data_table = load_data_table("Open")
 jobs_data_table = pn.bind(load_data_table, status_button_group)
 # json_editor = pn.bind(load_editor, search_company)
 

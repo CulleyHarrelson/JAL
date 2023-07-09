@@ -5,8 +5,7 @@ import datetime as dt
 
 from JAL import *
 
-pn.extension()
-pn.config.notifications = True
+pn.extension(notifications=True)
 
 jal_df = initialize_dataframe()
 

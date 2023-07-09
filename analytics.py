@@ -9,8 +9,7 @@ from JAL import company_sizes, initialize_dataframe, jal_template
 
 jal_df = initialize_dataframe()
 
-
-pn.extension()
+pn.extension('vega')
 
 bootstrap = jal_template()
 
@@ -163,6 +162,18 @@ total_applicants = pn.indicators.Number(
     default_color="darkblue",
 )
 
+total_applications_open = pn.indicators.Number(
+    name="Open Applications",
+    value=jal_df[jal_df["status"] == "Open"]["job_code"].nunique(),
+    default_color="darkred",
+)
+total_applications_closed = pn.indicators.Number(
+    name="Closed Applications",
+    value=jal_df[jal_df["status"] == "Closed"]["job_code"].nunique(),
+    default_color="darkblue",
+)
+
+
 average_applicants = pn.indicators.Number(
     name="Average Applicants",
     value=round(jal_df["applicants"].sum() / jal_df["job_code"].nunique()),
@@ -174,11 +185,11 @@ daily_average = pn.indicators.Number(
     value=round(daily_application_average, 2),
     default_color="darkgreen",
 )
-application_count = pn.indicators.Number(
-    name="Application Count",
-    value=jal_df["job_code"].nunique(),
-    default_color="darkred",
-)
+# application_count = pn.indicators.Number(
+#     name="Application Count",
+#     value=jal_df["job_code"].nunique(),
+#     default_color="darkred",
+# )
 location_count = pn.indicators.Number(
     name="Location Count",
     value=jal_df["location"].nunique(),
@@ -188,7 +199,9 @@ industry_count = pn.indicators.Number(
     name="Industry Count", value=jal_df["industry"].nunique(), default_color="orange"
 )
 
-bootstrap.sidebar.append(application_count)
+# bootstrap.sidebar.append(application_count)
+bootstrap.sidebar.append(total_applications_open)
+bootstrap.sidebar.append(total_applications_closed)
 bootstrap.sidebar.append(daily_average)
 bootstrap.sidebar.append(average_applicants)
 bootstrap.sidebar.append(total_applicants)

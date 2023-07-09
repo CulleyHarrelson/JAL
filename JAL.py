@@ -8,80 +8,69 @@ import datetime as dt
 from bokeh.models.widgets.tables import DateFormatter
 import altair as alt
 
-jobs_directory = "jobs"
-df_filename = "JAL.json"
-
-
-def directories():
-    return_dict = {}
-    jobs_directory = "jobs"
-    return_dict["html"] = os.path.join(jobs_directory, "html")
-    return_dict["raw"] = os.path.join(jobs_directory, "raw")
-    return_dict["json"] = os.path.join(jobs_directory, "json")
-
+def initialize_directories():
     if not os.path.exists(jobs_directory):
         os.mkdir(jobs_directory)
 
-    if not os.path.exists(return_dict["html"]):
-        os.mkdir(return_dict["html"])
+    if not os.path.exists(directories["html"]):
+        os.mkdir(directories["html"])
 
-    if not os.path.exists(return_dict["raw"]):
-        os.mkdir(return_dict["raw"])
+    if not os.path.exists(directories["raw"]):
+        os.mkdir(directories["raw"])
 
-    if not os.path.exists(return_dict["json"]):
-        os.mkdir(return_dict["json"])
-    return return_dict
+    if not os.path.exists(directories["json"]):
+        os.mkdir(directories["json"])
+    return directories
 
+jobs_directory = "jobs"
+df_filename = "JAL.json"
+directories = {}
+jobs_directory = "jobs"
+directories["html"] = os.path.join(jobs_directory, "html")
+directories["raw"] = os.path.join(jobs_directory, "raw")
+directories["json"] = os.path.join(jobs_directory, "json")
 
-def company_sizes():
-    company_sizes = [
-        "51-200 employees",
-        "201-500 employees",
-        "501-1,000 employees",
-        "1,001-5,000 employees",
-        "5,001-10,000 employees",
-        "10,000+ employees",
-    ]
-    return company_sizes
-
-
-def job_types():
-    job_types = [
-        "Full-time",
-        "Contract",
-        "Volunteer",
-        "Other",
-        "Part-time",
-        "Temporary",
-        "Internship",
-    ]
-    return job_types
+company_sizes = [
+    "51-200 employees",
+    "201-500 employees",
+    "501-1,000 employees",
+    "1,001-5,000 employees",
+    "5,001-10,000 employees",
+    "10,000+ employees",
+]
 
 
-def columns():
-    df_columns = [
-        "job_code",
-        "job_title",
-        "company_name",
-        "location",
-        "starting_salary_range",
-        "ending_salary_range",
-        "experience_level",
-        "job_type",
-        "company_size",
-        "industry",
-        "application_date",
-        "applicants",
-    ]
-    return df_columns
+job_types = [
+    "Full-time",
+    "Contract",
+    "Volunteer",
+    "Other",
+    "Part-time",
+    "Temporary",
+    "Internship",
+]
 
 
-directories = directories()
-job_types = job_types()
+df_columns = [
+    "job_code",
+    "job_title",
+    "company_name",
+    "location",
+    "starting_salary_range",
+    "ending_salary_range",
+    "experience_level",
+    "job_type",
+    "company_size",
+    "industry",
+    "application_date",
+    "applicants",
+]
+
+
 
 
 def compile_dataframe():
-    df = pd.DataFrame(columns=columns())
+    df = pd.DataFrame(columns=df_columns)
     for file in os.listdir(directories["json"]):
         if file.endswith(".json"):
             with open(os.path.join(directories["json"], file)) as f:
