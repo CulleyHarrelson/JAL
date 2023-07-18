@@ -178,6 +178,13 @@ pipeline = pn.pipeline.Pipeline()
 pipeline.add_stage("Stage 1", Stage1)
 pipeline.add_stage("Stage 2", Stage2)
 
-bootstrap.main.append(pipeline)
+location = pn.state.location.search
+# extract job_code from location
+job_code = location.split("=")[1]
+
+# bootstrap.main.append(pipeline)
+#
+job_code = pn.widgets.StaticText(name="Job Code", value=job_code)
+bootstrap.main.append(job_code)
 
 bootstrap.servable()

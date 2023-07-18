@@ -5,8 +5,8 @@ import json
 import re
 import requests
 import datetime as dt
-from bokeh.models.widgets.tables import DateFormatter
 import altair as alt
+
 
 def initialize_directories():
     if not os.path.exists(jobs_directory):
@@ -21,6 +21,7 @@ def initialize_directories():
     if not os.path.exists(directories["json"]):
         os.mkdir(directories["json"])
     return directories
+
 
 jobs_directory = "jobs"
 df_filename = "JAL.json"
@@ -65,8 +66,6 @@ df_columns = [
     "application_date",
     "applicants",
 ]
-
-
 
 
 def compile_dataframe():
@@ -145,6 +144,12 @@ def parse_salary_range(salary_range):
 
         return_value["starting_salary_range"] = match.group(1).replace(",", "")
         return_value["ending_salary_range"] = match.group(2).replace(",", "")
+        # create an average salary
+        return_value["average_salary"] = (
+            int(return_value["starting_salary_range"])
+            + int(return_value["ending_salary_range"])
+        ) / 2
+
     return return_value
 
 
@@ -238,5 +243,4 @@ def jal_template():
         title="JAL ~ Job Application Log",
         header_background="lightblue",
     )
-
     return bootstrap

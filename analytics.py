@@ -9,7 +9,7 @@ from JAL import company_sizes, initialize_dataframe, jal_template
 
 jal_df = initialize_dataframe()
 
-pn.extension('vega')
+pn.extension("vega")
 
 bootstrap = jal_template()
 
@@ -85,7 +85,7 @@ company_size_donut_chart = (
     .mark_arc(innerRadius=65)
     .encode(
         theta="Count",
-        color=alt.Color("company_size:N", sort=company_sizes()).legend(
+        color=alt.Color("company_size:N", sort=company_sizes).legend(
             title="Company Size",
             orient="right",
         ),
@@ -199,6 +199,34 @@ industry_count = pn.indicators.Number(
     name="Industry Count", value=jal_df["industry"].nunique(), default_color="orange"
 )
 
+salary_df = pd.DataFrame(jal_df[jal_df["starting_salary_range"].notnull()])
+salary_df["average_salary"] = (
+    salary_df["starting_salary_range"] + salary_df["ending_salary_range"]
+) / 2
+# salary_df = salary_df[["applicants", "average_salary"]]
+salary_df = pd.concat(
+    [
+        salary_df,
+        jal_df[jal_df["hourly_rate"].notnull()]  # [["applicants", "hourly_rate"]]
+        .rename(columns={"hourly_rate": "average_salary"})
+        .assign(average_salary=lambda df: jal_df.hourly_rate * 40 * 52),
+    ]
+)
+# using altair create a scatter plot of salary vs applicants
+# salary_df = salary_df[salary_df["average_salary"].notnull()]
+salary_scatter = (
+    alt.Chart(salary_df)
+    .mark_point()
+    .encode(
+        x=alt.X("average_salary:Q", title="Salary"),
+        y=alt.Y("applicants:Q", title="Applicants"),
+        tooltip=["company_name", "job_title", "applicants"],
+        # size="applicants:Q",
+    )
+    .properties(width=800, height=400)
+)
+
+
 # bootstrap.sidebar.append(application_count)
 bootstrap.sidebar.append(total_applications_open)
 bootstrap.sidebar.append(total_applications_closed)
@@ -214,6 +242,7 @@ analysis = pn.Column(
     pn.Row(other_application_chart),
     pn.Row(location_salary_box_plot),
     pn.Row(company_size_donut_chart),
+    pn.Row(salary_scatter),
 )
 
 bootstrap.main.append(analysis)

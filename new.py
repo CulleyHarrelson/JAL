@@ -93,7 +93,7 @@ def save_record(event):
     job_code.value = ""
     job_details.value = ""
     compile_dataframe()
-    bootstrap.param.trigger("object")
+    #bootstrap.param.trigger("object")
 
 
 add_button.on_click(save_record)
