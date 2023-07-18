@@ -1,63 +1,72 @@
 import requests
 import constants
-import openai
-from langchain.agents import AgentType, initialize_agent, load_tools
+
+# import openai
+# from langchain.agents import AgentType, initialize_agent , load_tools
 from langchain.llms import OpenAI
+
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-import bs4
-from bs4.element import Comment
+from langchain.document_loaders import UnstructuredURLLoader
+from langchain.chat_models import ChatOpenAI
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
 
 
-def tag_visible(element):
-    if element.parent.name in ["style", "script", "head", "[document]"]:
-        return False
-    if isinstance(element, Comment):
-        return False
-    return True
+def lookup_job(url):
+    urls = [url]
+    loader = UnstructuredURLLoader(urls=urls)
+    jd = loader.load()
+    return jd
 
 
-def url_to_plaintext(url):
-    response = requests.get(url)
-    contents = response.content
+def parse_job_description(url):
+    model_name = "text-davinci-003"
+    temperature = 0.0
+    model = OpenAI(model_name=model_name, temperature=temperature)
 
-    soup = bs4.BeautifulSoup(contents, "html.parser")
+    class JobApplication(BaseModel):
+        company_name: str = Field(
+            description="The name of the company in the job description"
+        )
+        job_title: str = Field(description="The job title in the job description")
+        low_salary_range: str = Field(
+            description="Given a salary range for the job description, this is the lower number"
+        )
+        high_salary_range: str = Field(
+            description="Given a salary range for the job description, this is the greater number"
+        )
 
-    texts = soup.findAll(string=True)
-    visible_texts = filter(tag_visible, texts)
-    return " ".join(t.strip() for t in visible_texts)
+    # And a query intented to prompt a language model to populate the data structure.
+    jd = lookup_job(url)
 
-    return plaintext
+    # Set up a parser + inject instructions into the prompt template.
+    parser = PydanticOutputParser(pydantic_object=JobApplication)
 
+    prompt = PromptTemplate(
+        template="Parse the following online job description \n{format_instructions}\n{job_description}\n",
+        input_variables=["job_description"],
+        partial_variables={"format_instructions": parser.get_format_instructions()},
+    )
 
-# jd = beautiful_soup_test('jobs/html/3656898068.html')
-# jd = html_to_plaintext('jobs/html/3634670029.html')
+    _input = prompt.format_prompt(job_description=jd)
+
+    output = model(_input.to_string())
+
+    return parser.parse(output)
 
 
 # contains an iframe, cant find location
 # jd = url_to_plaintext('https://c3.ai/job-description/?gh_jid=4112793002')
-def main():
-    jd = url_to_plaintext("https://careers.roblox.com/jobs/5024558")
-    # jd = url_to_plaintext('https://careers.adobe.com/us/en/job/R137607/Associate-Senior-Legal-Counsel-EDX-DEALS-group')
-
-    tools = load_tools(["serpapi"], llm=llm)
-
-    llm = OpenAI(openai_api_key=constants.APIKEY, temperature=0.9)
-    prompt_text = """The text that follows is a job description from a company careers page. BeautifulSoup4
-    has been used to remove the html.  At the top is the meta tags and page title, followed by the body of the web page.
-    Return a json dictionary with these fields: company_name, city_state, job_title, low_salary_range, high_salary_range
-    Here is the job description {job_description}"""
-    prompt = PromptTemplate.from_template(prompt_text)
-    chain = LLMChain(llm=llm, prompt=prompt)
-    job_data = chain.run(jd)
-    # agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-
-    # jd
-    job_data
 
 
 if __name__ == "__main__":
     # execute only if run as a script
-    main()
+    url = "https://careers.lamresearch.com/job/Data-Security-Engineer/1042795300/"
+    print(parse_job_description(url=url))
+
+    # TODO - string to long
+    # url2 = "https://c3.ai/job-description/?gh_jid=4112793002"
+    # print(parse_job_description(url=url2))
 
 # jd
